@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Scope",
+  "version": "0.1.0",
+  "description": "A local-first debugging companion for frontend developers.",
+  "minimum_chrome_version": "116",
+  "permissions": ["sidePanel", "activeTab", "scripting"],
+  "action": { "default_title": "Open Scope" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
