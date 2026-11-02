@@ -83,12 +83,19 @@ export function useSession() {
     };
   }, [refresh]);
 
+  useEffect(() => {
+    if (session?.status !== 'active' || !session.reload) return;
+    const timer = window.setInterval(() => void refresh(), 1000);
+    return () => window.clearInterval(timer);
+  }, [session, refresh]);
+
   return {
     session,
     pending,
     error,
     refresh,
     start: () => run({ type: 'scope/start-session' }),
+    recordAndReload: () => run({ type: 'scope/record-and-reload' }),
     stop: () =>
       session
         ? run({ type: 'scope/stop-session', sessionId: session.id })

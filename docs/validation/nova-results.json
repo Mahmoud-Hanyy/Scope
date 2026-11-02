@@ -1,0 +1,58 @@
+{
+  "app": "Nova existing production build",
+  "sourceChanged": false,
+  "scenarios": [
+    {
+      "name": "normal navigation",
+      "classification": "unchanged application baseline; no fault injected",
+      "initialResourceCounts": {
+        "document": 1,
+        "stylesheet": 2,
+        "script": 9,
+        "image": 4,
+        "font": 2,
+        "fetch": 14
+      },
+      "totalResourceCounts": {
+        "document": 1,
+        "stylesheet": 2,
+        "script": 9,
+        "image": 4,
+        "font": 2,
+        "fetch": 14
+      },
+      "nativeErrors": 0,
+      "consoleErrors": 1,
+      "fallbackVisible": false,
+      "sessionStatus": "stopped",
+      "endReason": "user",
+      "eventCount": 8,
+      "eventTypes": {
+        "click": 8
+      },
+      "incidents": 0
+    },
+    {
+      "name": "full reload",
+      "classification": "unchanged application; intentional navigation check",
+      "sessionStatus": "interrupted",
+      "endReason": "page-navigation",
+      "eventCount": 0
+    },
+    {
+      "name": "controlled model-load failure",
+      "classification": "fault injection using an existing Nova error boundary; not a discovered natural defect",
+      "exercised": true,
+      "requestBeganBeforeRecording": true,
+      "modelResponse503": true,
+      "fallbackVisible": true,
+      "consoleErrors": 3,
+      "nativeErrors": 1,
+      "eventCount": 1,
+      "eventTypes": {
+        "exception": 1
+      },
+      "incidents": 1
+    }
+  ]
+}

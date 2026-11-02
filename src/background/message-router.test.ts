@@ -14,7 +14,9 @@ const browser = {
 beforeEach(() => {
   vi.stubGlobal('chrome', browser);
   browser.tabs.query.mockResolvedValue([{ id: 7 }]);
-  browser.scripting.executeScript.mockResolvedValue([]);
+  browser.scripting.executeScript.mockResolvedValue([
+    { documentId: 'test-document' },
+  ]);
   browser.tabs.sendMessage.mockResolvedValue({ type: 'scope/page-ready' });
 });
 afterEach(() => vi.unstubAllGlobals());

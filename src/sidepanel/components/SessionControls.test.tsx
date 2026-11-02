@@ -1,11 +1,40 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { requestSession } from '../../messaging/client';
+import { requestSession, requestAnalysis } from '../../messaging/client';
 import { activeSession } from '../../test/session-fixture';
 import { SessionControls } from './SessionControls';
 
-vi.mock('../../messaging/client', () => ({ requestSession: vi.fn() }));
-beforeEach(() => vi.mocked(requestSession).mockReset());
+vi.mock('../../messaging/client', () => ({
+  requestSession: vi.fn(),
+  requestEvents: vi.fn().mockResolvedValue({ count: 0, events: [] }),
+  requestAnalysis: vi.fn(),
+}));
+beforeEach(() => {
+  vi.mocked(requestSession).mockReset();
+  vi.mocked(requestAnalysis).mockResolvedValue({
+    session: activeSession,
+    eventCount: 0,
+    incidents: [],
+  });
+});
+
+it('requests record-and-reload explicitly and disables it during an active recording', async () => {
+  vi.mocked(requestSession)
+    .mockResolvedValueOnce(null)
+    .mockResolvedValueOnce(activeSession);
+  await act(async () => {
+    render(<SessionControls />);
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Record and reload' }));
+  });
+  expect(requestSession).toHaveBeenLastCalledWith({
+    type: 'scope/record-and-reload',
+  });
+  expect(
+    screen.getByRole('button', { name: 'Record and reload' }),
+  ).toBeDisabled();
+});
 
 it('starts, displays, and stops a session through application messaging', async () => {
   vi.mocked(requestSession)

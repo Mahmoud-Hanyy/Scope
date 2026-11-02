@@ -1,8 +1,10 @@
 import { registerMessageRouter } from './message-router';
 import { registerSessionLifecycle } from './session-manager';
+import { registerEventIngestion } from './event-ingestion';
 
 registerMessageRouter();
 registerSessionLifecycle();
+registerEventIngestion();
 
 chrome.action.onClicked.addListener((tab) => {
   if (tab.id === undefined) return;

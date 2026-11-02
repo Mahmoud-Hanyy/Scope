@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ScopeDatabase } from '../database';
 import { MAX_RETAINED_SESSIONS, SessionsRepository } from './sessions';
 import { SessionChangedError } from '../../types/session';
+import { normalizedClick } from '../../test/interaction-fixture';
 
 let db: ScopeDatabase;
 let repository: SessionsRepository;
@@ -14,6 +15,37 @@ beforeEach(() => {
 afterEach(() => db.delete());
 
 describe('persistent session lifecycle', () => {
+  it('binds a pending reload once, only to a new document in the selected tab', async () => {
+    const pending = await repository.start(7, 1000, 'old-document', {
+      expiresAt: 5000,
+    });
+    expect(await repository.claimReload(8, 'new-document', 2000)).toBeNull();
+    expect(await repository.claimReload(7, 'old-document', 2000)).toBeNull();
+    const bound = await repository.claimReload(7, 'new-document', 2000);
+    expect(bound).toMatchObject({
+      id: pending.id,
+      documentId: 'new-document',
+      status: 'active',
+    });
+    expect(bound?.reload).toBeUndefined();
+    expect(await repository.claimReload(7, 'third-document', 2000)).toBeNull();
+  });
+
+  it('rejects expired and cancelled reload claims', async () => {
+    const pending = await repository.start(7, 1000, 'old-document', {
+      expiresAt: 1500,
+    });
+    expect(await repository.claimReload(7, 'new-document', 1500)).toBeNull();
+    await repository.stop(pending.id, 1600);
+    expect(await repository.claimReload(7, 'new-document', 1700)).toBeNull();
+  });
+  it('persists the authoritative document identity for a new recording', async () => {
+    const session = await repository.start(7, 1000, 'original-document');
+    expect(session.documentId).toBe('original-document');
+    expect((await repository.getCurrent())?.documentId).toBe(
+      'original-document',
+    );
+  });
   it('starts empty, persists one active session, and restores after reopening IndexedDB', async () => {
     expect(await repository.getCurrent()).toBeNull();
     const started = await repository.start(7, 1000);
@@ -74,9 +106,12 @@ describe('persistent session lifecycle', () => {
   it('bounds metadata retention and keeps the current session', async () => {
     for (let index = 0; index < MAX_RETAINED_SESSIONS + 2; index++) {
       const session = await repository.start(7, index * 1000);
+      if (index === 0)
+        await db.events.add({ ...normalizedClick, sessionId: session.id });
       await repository.stop(session.id, index * 1000 + 500);
     }
     expect(await db.sessions.count()).toBe(MAX_RETAINED_SESSIONS);
+    expect(await db.events.count()).toBe(0);
     const current = await repository.getCurrent();
     expect(current?.startedAt).toBe((MAX_RETAINED_SESSIONS + 1) * 1000);
   });

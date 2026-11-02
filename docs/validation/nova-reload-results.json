@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-02",
+  "app": "Nova existing production build",
+  "sourceChanged": false,
+  "classification": "simulated model HTTP 503 during explicit Record and reload; not a naturally occurring Nova defect",
+  "sessionStatus": "stopped",
+  "endReason": "user",
+  "eventCount": 3,
+  "recentEventTypes": {
+    "request": 1,
+    "response": 1,
+    "exception": 1
+  },
+  "incidents": [
+    {
+      "kind": "http-error",
+      "severity": "medium",
+      "eventTypes": ["request", "response", "exception"],
+      "links": [
+        {
+          "fromId": "b4c07ae0-bc2d-4c40-b599-9acd7344123e",
+          "toId": "e3aee774-ab7c-4e41-a92b-988159a8cb06",
+          "kind": "request-id",
+          "deltaMs": 4.2998046875,
+          "alternatives": 0
+        },
+        {
+          "fromId": "e3aee774-ab7c-4e41-a92b-988159a8cb06",
+          "toId": "c7408f54-4dfb-4f79-ab5a-0fb960f02a30",
+          "kind": "nearby-runtime",
+          "deltaMs": 362.400146484375,
+          "alternatives": 0
+        }
+      ]
+    }
+  ],
+  "temporaryScriptsRemaining": 0
+}

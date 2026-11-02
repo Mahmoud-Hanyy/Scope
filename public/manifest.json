@@ -5,7 +5,13 @@
   "description": "A local-first debugging companion for frontend developers.",
   "minimum_chrome_version": "116",
   "permissions": ["sidePanel", "activeTab", "scripting"],
-  "action": { "default_title": "Open Scope" },
+  "icons": {
+    "16": "logo.png",
+    "32": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },
+  "action": { "default_title": "Open Scope", "default_icon": "logo.png" },
   "side_panel": { "default_path": "sidepanel.html" },
   "background": { "service_worker": "background.js", "type": "module" },
   "content_security_policy": {

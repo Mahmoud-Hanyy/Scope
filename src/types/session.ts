@@ -1,9 +1,17 @@
 import { z } from 'zod';
 
+export const documentIdSchema = z.string().min(1).max(64);
+
 const metadata = {
   id: z.uuid(),
   tabId: z.number().int().nonnegative(),
   startedAt: z.number().int().nonnegative(),
+  // Optional for existing saved sessions; new recordings bind to one document.
+  documentId: documentIdSchema.optional(),
+  reload: z
+    .object({ expiresAt: z.number().int().nonnegative() })
+    .strict()
+    .optional(),
 };
 
 export const sessionSchema = z
@@ -29,7 +37,13 @@ export const sessionSchema = z
         ...metadata,
         status: z.literal('interrupted'),
         endedAt: z.number().int().nonnegative(),
-        endReason: z.enum(['tab-closed', 'browser-restart']),
+        endReason: z.enum([
+          'tab-closed',
+          'browser-restart',
+          'page-navigation',
+          'capture-error',
+          'event-limit',
+        ]),
       })
       .strict(),
   ])

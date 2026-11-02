@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Scope capture playground</title>
+    <style>
+      body {
+        font: 16px/1.6 system-ui;
+        max-width: 640px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      label {
+        display: block;
+        margin: 16px 0;
+      }
+      input,
+      select,
+      button {
+        font: inherit;
+        padding: 6px;
+      }
+      input:not([type='checkbox']) {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scope capture playground</h1>
+    <p>
+      Open Scope and start a session. Click, edit a field and move focus away,
+      then submit. Only element categories should appear in Scope.
+    </p>
+    <button type="button" id="action">
+      Test click <span>nested target</span>
+    </button>
+    <form id="form">
+      <label
+        >Notes <input id="notes" name="private-notes" autocomplete="off"
+      /></label>
+      <label
+        >Password
+        <input id="password" type="password" autocomplete="new-password"
+      /></label>
+      <label><input id="enabled" type="checkbox" /> Enabled</label>
+      <label
+        >Priority
+        <select id="priority">
+          <option>Normal</option>
+          <option>Urgent</option>
+        </select></label
+      >
+      <button type="submit">Submit without navigation</button>
+    </form>
+    <p id="result" role="status">Form has not been submitted.</p>
+    <h2>Network metadata</h2>
+    <p>
+      These buttons use local test files. Scope should show route categories,
+      method, status, and duration, with query values omitted.
+    </p>
+    <button type="button" id="fetch-test">Fetch JSON</button>
+    <button type="button" id="xhr-test">XHR JSON</button>
+    <button type="button" id="fetch-missing">Fetch missing file</button>
+    <button type="button" id="fetch-abort">Abort Fetch</button>
+    <p id="network-result" role="status">No network test run.</p>
+    <h2>Incident checkpoint</h2>
+    <p>
+      Start a fresh Scope session, then submit once. A failed POST is followed
+      by an intentionally unhandled TypeError. Analyze the session in Scope to
+      review the proposed relationships.
+    </p>
+    <form id="incident-form">
+      <button type="submit">Reproduce failed action</button>
+    </form>
+    <button type="button" id="exception-test">Throw uncaught exception</button>
+    <p id="incident-result" role="status">No incident test run.</p>
+    <a href="/examples/interaction-playground.html?next=1"
+      >Navigate to end the session</a
+    >
+    <script>
+      document.getElementById('form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        document.getElementById('result').textContent =
+          'Form submitted; page behavior preserved.';
+      });
+      const networkResult = document.getElementById('network-result');
+      document
+        .getElementById('fetch-test')
+        .addEventListener('click', async () => {
+          try {
+            const response = await fetch(
+              '/examples/network-response.json?token=scope-test-secret',
+            );
+            const data = await response.json();
+            networkResult.textContent = `Fetch ${response.status}: ${data.message}`;
+          } catch {
+            networkResult.textContent = 'Fetch failed.';
+          }
+        });
+      document.getElementById('xhr-test').addEventListener('click', () => {
+        const request = new XMLHttpRequest();
+        request.open(
+          'GET',
+          '/examples/network-response.json?token=scope-test-secret',
+        );
+        request.onload = () => {
+          networkResult.textContent = `XHR ${request.status}: response received.`;
+        };
+        request.onerror = () => {
+          networkResult.textContent = 'XHR failed.';
+        };
+        request.send();
+      });
+      document
+        .getElementById('fetch-missing')
+        .addEventListener('click', async () => {
+          try {
+            const response = await fetch(
+              '/examples/does-not-exist.json?token=scope-test-secret',
+            );
+            networkResult.textContent = `Fetch returned HTTP ${response.status}. HTTP errors still resolve Fetch.`;
+          } catch {
+            networkResult.textContent = 'Fetch failed before an HTTP response.';
+          }
+        });
+      document
+        .getElementById('fetch-abort')
+        .addEventListener('click', async () => {
+          const controller = new AbortController();
+          const request = fetch('/examples/network-response.json', {
+            signal: controller.signal,
+          });
+          controller.abort();
+          try {
+            await request;
+          } catch {
+            networkResult.textContent = 'Fetch aborted.';
+          }
+        });
+      document
+        .getElementById('incident-form')
+        .addEventListener('submit', (event) => {
+          event.preventDefault();
+          document.getElementById('incident-result').textContent =
+            'Sending a POST to a missing local test resource…';
+          void fetch(
+            '/examples/does-not-exist.json?token=scope-private-query',
+            {
+              method: 'POST',
+              headers: { Authorization: 'Bearer scope-private-token' },
+              body: 'scope-private-body',
+            },
+          ).then((response) => {
+            document.getElementById('incident-result').textContent =
+              `HTTP ${response.status}; an intentionally unhandled TypeError follows.`;
+            if (!response.ok)
+              throw new TypeError('scope-private-error-message');
+          });
+        });
+      document
+        .getElementById('exception-test')
+        .addEventListener('click', () => {
+          setTimeout(() => {
+            throw new ReferenceError('scope-private-exception-message');
+          }, 0);
+        });
+    </script>
+  </body>
+</html>

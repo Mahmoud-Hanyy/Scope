@@ -6,6 +6,10 @@ import {
   type SessionRequest,
 } from './contracts';
 import type { Session } from '../types/session';
+import { eventsReplySchema, type EventsSnapshot } from './capture';
+import { analysisReplySchema } from './analysis';
+import type { SessionAnalysis } from '../types/incident';
+import { requestValidated } from './request';
 
 export async function requestConnectionCheck(): Promise<ConnectionReply> {
   if (typeof chrome === 'undefined' || !chrome.runtime?.id) {
@@ -14,8 +18,11 @@ export async function requestConnectionCheck(): Promise<ConnectionReply> {
     );
   }
   const request: ConnectionRequest = { type: 'scope/check-connection' };
-  const response: unknown = await chrome.runtime.sendMessage(request);
-  return connectionReplySchema.parse(response);
+  return requestValidated(
+    request,
+    connectionReplySchema,
+    'check the page connection',
+  );
 }
 
 const sessionErrors = {
@@ -33,8 +40,43 @@ export async function requestSession(
   if (typeof chrome === 'undefined' || !chrome.runtime?.id) {
     throw new Error('Load Scope as a Chrome extension to manage sessions.');
   }
-  const response: unknown = await chrome.runtime.sendMessage(request);
-  const reply = sessionReplySchema.parse(response);
+  const reply = await requestValidated(
+    request,
+    sessionReplySchema,
+    'update the session',
+  );
   if (reply.status === 'error') throw new Error(sessionErrors[reply.reason]);
   return reply.session;
+}
+
+export async function requestEvents(
+  sessionId: string,
+): Promise<EventsSnapshot> {
+  if (typeof chrome === 'undefined' || !chrome.runtime?.id)
+    throw new Error('Load Scope as an extension to inspect events.');
+  const reply = await requestValidated(
+    { type: 'scope/get-events', sessionId },
+    eventsReplySchema,
+    'load captured events',
+  );
+  if (reply.status === 'error')
+    throw new Error('Scope could not load captured events.');
+  return reply.snapshot;
+}
+
+export async function requestAnalysis(
+  sessionId: string,
+): Promise<SessionAnalysis> {
+  if (typeof chrome === 'undefined' || !chrome.runtime?.id)
+    throw new Error('Load Scope as an extension to analyze a session.');
+  const reply = await requestValidated(
+    { type: 'scope/analyze-session', sessionId },
+    analysisReplySchema,
+    'analyze the session',
+  );
+  if (reply.status === 'error')
+    throw new Error('Scope could not analyze this session.');
+  if (reply.analysis.session.id !== sessionId)
+    throw new Error('Scope received analysis for a different session.');
+  return reply.analysis;
 }

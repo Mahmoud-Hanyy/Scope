@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { requestConnectionCheck } from '../messaging/client';
 import type { ConnectionReply } from '../messaging/contracts';
 import { SessionControls } from './components/SessionControls';
+import { ScopeMessageError } from '../messaging/request';
 
 const unavailableMessages: Record<
   Extract<ConnectionReply, { status: 'unavailable' }>['reason'],
@@ -27,13 +28,15 @@ export function App() {
       const reply = await requestConnectionCheck();
       setStatus(
         reply.status === 'connected'
-          ? 'Connected to the current page. No events are being recorded.'
+          ? 'Connected to the current page.'
           : unavailableMessages[reply.reason],
       );
     } catch (error) {
       console.error('[Scope] Connection check failed.', error);
       setStatus(
-        'Scope could not check the connection. Load the extension and try reopening the panel.',
+        error instanceof ScopeMessageError
+          ? error.message
+          : 'Scope could not check the connection. Load the extension and try reopening the panel.',
       );
     } finally {
       setChecking(false);
@@ -48,7 +51,7 @@ export function App() {
           <p className="text-sm text-slate-400">Browser debugging companion</p>
         </div>
         <span className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-300">
-          Sessions
+          Incidents
         </span>
       </header>
       <section aria-labelledby="connection-heading" className="space-y-4">
@@ -78,8 +81,8 @@ export function App() {
       </section>
       <SessionControls />
       <footer className="mt-auto pt-8 text-xs leading-5 text-slate-500">
-        No page content, form values, or network traffic is collected by this
-        version.
+        Headers, bodies, error messages/stacks, form values, and page text are
+        omitted. URL details are redacted.
       </footer>
     </main>
   );

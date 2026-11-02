@@ -23,35 +23,44 @@ The README lists the remaining manual Chrome toolbar/access checks.
 - [x] Track active session
 - [x] Session timer
 
-Sessions persist lifecycle metadata only. Event capture starts in Phase 3.
+Session lifecycle now controls the interaction capture added in Phase 3.
 
 ## Phase 3 — Capture
 
-- [ ] Capture clicks
-- [ ] Capture form submissions
-- [ ] Capture relevant input changes
+- [x] Capture clicks
+- [x] Capture form submissions
+- [x] Capture relevant input changes
 - [ ] Capture navigation
-- [ ] Capture Fetch requests
-- [ ] Capture XMLHttpRequest
-- [ ] Capture JavaScript errors
-- [ ] Capture unhandled Promise rejections
+- [x] Capture Fetch requests
+- [x] Capture XMLHttpRequest
+- [x] Capture JavaScript errors
+- [x] Capture unhandled Promise rejections
 
 ## Phase 4 — Event Pipeline
 
-- [ ] Define ScopeEvent
-- [ ] Normalize captured events
-- [ ] Validate events with Zod
-- [ ] Sanitize sensitive information
-- [ ] Persist events
+- [x] Define ScopeEvent
+- [x] Normalize captured events
+- [x] Validate events with Zod
+- [x] Sanitize sensitive information
+- [x] Persist events
+
+These stages cover interaction, Fetch/XHR metadata, and runtime categories/source
+positions. Raw error messages/stacks/rejection values are omitted. Full-document
+navigation interrupts recording; same-document hash/history changes preserve it.
+Navigation event capture is still pending. The Nova trial exposed the remaining
+initial-load/reload capture gap; see [the assessment](docs/validation/nova.md).
 
 ## Phase 5 — Storage
 
 - [x] Configure Dexie
 - [x] Sessions repository
-- [ ] Events repository
+- [x] Events repository
 - [ ] Issues repository
 - [ ] Session deletion
-- [ ] Storage limits
+- [x] Storage limits
+
+Current limits: 100 sessions, 1,000 events per session, with cascading retention.
+The latest-20 interaction preview is implemented; the full timeline remains below.
 
 ## Phase 6 — Timeline
 
@@ -63,37 +72,45 @@ Sessions persist lifecycle metadata only. Event capture starts in Phase 3.
 
 ## Phase 7 — Correlation Engine
 
-- [ ] Define correlation model
-- [ ] Interaction → request correlation
-- [ ] Request → response correlation
-- [ ] Response → error correlation
-- [ ] Event chains
+- [x] Define correlation model
+- [x] Interaction → request correlation
+- [x] Request → response correlation
+- [x] Response → error correlation
+- [x] Event chains
 - [ ] Confidence scoring
-- [ ] Unit tests
+- [x] Unit tests
+
+Initial correlation covers failed-request incidents only. Links show explicit
+evidence and ambiguity; temporal links do not assert causation. Confidence scoring
+is intentionally deferred. See ARCHITECTURE.md for the deterministic windows/rules.
 
 ## Phase 8 — Detection Engine
 
-- [ ] HTTP failure detector
-- [ ] Network failure detector
-- [ ] Runtime exception detector
-- [ ] Promise rejection detector
+- [x] HTTP failure detector
+- [x] Network failure detector
+- [x] Runtime exception detector
+- [x] Promise rejection detector
 - [ ] Slow request detector
 - [ ] Duplicate request detector
-- [ ] Severity calculation
+- [x] Severity calculation
 
 ## Phase 9 — Issues
 
-- [ ] Issues list
-- [ ] Issue details
+- [x] Issues list
+- [x] Issue details
 - [ ] Related event visualization
 - [ ] Severity filtering
 
 ## Phase 10 — Reports
 
-- [ ] Generate debug report
-- [ ] Copy report
-- [ ] Markdown export
+- [x] Generate debug report
+- [x] Copy report
+- [x] Markdown export
 - [ ] JSON export
+
+The incident checkpoint derives issues on demand and exports one selected
+incident. Persistent issues/history, full-session export, graph visualization,
+filtering, broader detection, and real-project usefulness validation remain.
 
 ## Phase 11 — Hardening
 
@@ -112,3 +129,13 @@ Sessions persist lifecycle metadata only. Event capture starts in Phase 3.
 - [ ] Privacy documentation
 - [ ] Chrome Web Store package
 - [ ] Public README
+
+## Startup capture checkpoint
+
+- [x] Explicit Record and reload action with persisted preparation deadline
+- [x] Early bounded Fetch/XHR/runtime buffering and selected-document claim
+- [x] Remove temporary scripts and preserve Stop/document boundaries
+- [x] Browser regression for inline startup failure and privacy omissions
+
+This enables startup capture for the selected reload; general multi-document
+recording/navigation events remain future work. See README for coverage limits.

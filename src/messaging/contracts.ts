@@ -40,6 +40,7 @@ export type ConnectionReply = z.infer<typeof connectionReplySchema>;
 export const sessionRequestSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('scope/get-session') }).strict(),
   z.object({ type: z.literal('scope/start-session') }).strict(),
+  z.object({ type: z.literal('scope/record-and-reload') }).strict(),
   z
     .object({ type: z.literal('scope/stop-session'), sessionId: z.uuid() })
     .strict(),

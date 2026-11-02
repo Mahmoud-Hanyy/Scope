@@ -7,10 +7,11 @@ import { App } from './App';
 vi.mock('../messaging/client', () => ({
   requestConnectionCheck: vi.fn(),
   requestSession: vi.fn(),
+  requestEvents: vi.fn().mockResolvedValue({ count: 0, events: [] }),
 }));
 beforeEach(() => vi.mocked(requestSession).mockResolvedValue(null));
 
-it('shows the initial state and successful connection without suggesting recording', async () => {
+it('shows the initial state and checks the page connection', async () => {
   vi.mocked(requestConnectionCheck).mockResolvedValue({ status: 'connected' });
   render(<App />);
   expect(
@@ -20,9 +21,7 @@ it('shows the initial state and successful connection without suggesting recordi
     screen.getByRole('button', { name: 'Check connection' }),
   );
   expect(
-    await screen.findByText(
-      'Connected to the current page. No events are being recorded.',
-    ),
+    await screen.findByText('Connected to the current page.'),
   ).toBeInTheDocument();
 });
 

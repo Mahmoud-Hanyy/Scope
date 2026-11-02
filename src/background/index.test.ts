@@ -2,6 +2,9 @@ import { afterEach, expect, it, vi } from 'vitest';
 
 vi.mock('./message-router', () => ({ registerMessageRouter: vi.fn() }));
 vi.mock('./session-manager', () => ({ registerSessionLifecycle: vi.fn() }));
+vi.mock('./event-ingestion', () => ({
+  registerEventIngestion: vi.fn(),
+}));
 
 afterEach(() => vi.unstubAllGlobals());
 

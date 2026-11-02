@@ -31,11 +31,17 @@ export class SessionsRepository {
     );
   }
 
-  start(tabId: number, now = Date.now()): Promise<Session> {
+  start(
+    tabId: number,
+    now = Date.now(),
+    documentId?: string,
+    reload?: { expiresAt: number },
+  ): Promise<Session> {
     return this.db.transaction(
       'rw',
       this.db.sessions,
       this.db.sessionState,
+      this.db.events,
       async () => {
         const current = await this.readCurrent();
         // Read and write in one transaction so competing panels cannot start two sessions.
@@ -44,6 +50,8 @@ export class SessionsRepository {
           id: crypto.randomUUID(),
           tabId,
           startedAt: now,
+          ...(documentId !== undefined ? { documentId } : {}),
+          ...(reload ? { reload } : {}),
           status: 'active',
           endedAt: null,
           endReason: null,
@@ -57,9 +65,11 @@ export class SessionsRepository {
         const previous = (
           await this.db.sessions.orderBy('startedAt').reverse().toArray()
         ).filter((row) => row.id !== session.id);
-        await this.db.sessions.bulkDelete(
-          previous.slice(MAX_RETAINED_SESSIONS - 1).map((row) => row.id),
-        );
+        const removed = previous
+          .slice(MAX_RETAINED_SESSIONS - 1)
+          .map((row) => row.id);
+        await this.db.events.where('sessionId').anyOf(removed).delete();
+        await this.db.sessions.bulkDelete(removed);
         return session;
       },
     );
@@ -81,9 +91,9 @@ export class SessionsRepository {
     );
   }
 
-  interrupt(
-    reason: Exclude<SessionEndReason, 'user'>,
-    tabId?: number,
+  claimReload(
+    tabId: number,
+    documentId: string,
     now = Date.now(),
   ): Promise<Session | null> {
     return this.db.transaction(
@@ -94,6 +104,39 @@ export class SessionsRepository {
         const current = await this.readCurrent();
         if (
           current?.status !== 'active' ||
+          current.tabId !== tabId ||
+          !current.reload ||
+          current.reload.expiresAt <= now ||
+          current.documentId === documentId
+        )
+          return null;
+        const session = sessionSchema.parse({
+          ...current,
+          documentId,
+          reload: undefined,
+        });
+        await this.db.sessions.put(session);
+        return session;
+      },
+    );
+  }
+
+  interrupt(
+    reason: Exclude<SessionEndReason, 'user'>,
+    tabId?: number,
+    now = Date.now(),
+    expectedSessionId?: string,
+  ): Promise<Session | null> {
+    return this.db.transaction(
+      'rw',
+      this.db.sessions,
+      this.db.sessionState,
+      async () => {
+        const current = await this.readCurrent();
+        if (
+          current?.status !== 'active' ||
+          (expectedSessionId !== undefined &&
+            current.id !== expectedSessionId) ||
           (tabId !== undefined && current.tabId !== tabId)
         )
           return current;
@@ -109,6 +152,7 @@ export class SessionsRepository {
   ): Promise<Session> {
     const session = sessionSchema.parse({
       ...current,
+      reload: undefined,
       status: endReason === 'user' ? 'stopped' : 'interrupted',
       endedAt: Math.max(current.startedAt, now),
       endReason,
